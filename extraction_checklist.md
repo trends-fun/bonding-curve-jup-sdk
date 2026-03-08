@@ -37,8 +37,8 @@ Before delivery, verify these fields in `Cargo.toml`:
 Add or confirm the following repository-level files:
 
 - `.gitignore`
-- CI workflow that runs `cargo fmt --check` and `cargo test`
-- CI workflow that runs `cargo test --features jupiter-adapter`
+- CI workflow that runs `cargo fmt --check` and `cargo test --locked`
+- CI workflow that runs `cargo test --locked --features jupiter-adapter`
 - any security or audit references you plan to share with Jupiter
 
 Before delivery:
@@ -75,7 +75,7 @@ Include these points in the handoff message:
 
 - the crate is deterministic and does not perform network calls
 - it owns pool parsing, quote math, fee logic, venue metadata, and ABI-order account metas
-- it does not own Jupiter `Amm` glue, loader registration, or execution routing
+- it does not own loader registration or execution routing
 - the compile-checked adapter lives in `src/jupiter_adapter.rs`
 - the repository includes a real mainnet pool fixture for snapshot and adapter regression tests
 - the SDK supports referral-aware quote math, but the current adapter keeps quote-time policy at no-referral until referrer context is available

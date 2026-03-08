@@ -62,8 +62,8 @@ Main exports:
 
 ## What Stays Outside This Crate
 
-- `QuoteParams` and `SwapParams` mapping
-- placeholder account policy for optional referral accounts
+- `QuoteParams` and `SwapParams` mapping (handled by the `jupiter-adapter` feature)
+- placeholder account policy for optional referral accounts (handled by the `jupiter-adapter` feature)
 - loader registration
 - route execution and CPI plumbing
 - Jupiter-side snapshot and execution tests
@@ -146,8 +146,10 @@ Run these locally before handing the repository to Jupiter:
 
 ```bash
 cargo fmt --check
-cargo test
-cargo test --features jupiter-adapter
+cargo test --locked
+cargo test --locked --features jupiter-adapter
+cargo clippy --all-targets --all-features -- -D warnings
+cargo package --allow-dirty
 ```
 
 The fixture currently snapshots mainnet pool `8r9aukF8nPpk33R7eTZW7nkVuLq2jrENVyvKmoSNoHfU`.
