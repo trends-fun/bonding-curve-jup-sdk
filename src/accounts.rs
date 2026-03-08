@@ -2,7 +2,7 @@ use crate::{PoolSnapshot, WSOL_MINT};
 use solana_instruction::AccountMeta;
 use solana_pubkey::{pubkey, Pubkey};
 
-pub const BONDING_CURVE_LABEL: &str = "Bonding Curve";
+pub const BONDING_CURVE_LABEL: &str = "Trends";
 pub const BONDING_CURVE_PROGRAM_ID: Pubkey =
     pubkey!("CURVEmPpijXDTNdqrA9PGP1io2rkgiVXH26xdXVGLLfz");
 pub const TOKEN_PROGRAM_ID: Pubkey = pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
