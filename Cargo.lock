@@ -148,7 +148,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bonding-curve-sdk"
+name = "bonding-curve-jup-sdk"
 version = "0.1.0"
 dependencies = [
  "anyhow",

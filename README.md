@@ -72,7 +72,7 @@ Main exports:
 
 The receiving Jupiter integration repo should:
 
-1. depend on `bonding-curve-sdk` with the `jupiter-adapter` feature enabled
+1. depend on `bonding-curve-jup-sdk` with the `jupiter-adapter` feature enabled
 2. register `BondingCurveAmm` in the loader or program-id map
 3. wire `Swap::MeteoraDynamicBondingCurveSwapWithRemainingAccounts` to the execution path
 4. add quote, account-meta, snapshot, and execution tests

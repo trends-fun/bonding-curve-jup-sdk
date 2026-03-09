@@ -1,5 +1,5 @@
 [package]
-name = "bonding-curve-sdk"
+name = "bonding-curve-jup-sdk"
 version = "0.1.0"
 edition = "2021"
 description = "Pure Rust Bonding Curve quoting SDK for Jupiter AMM integration"
