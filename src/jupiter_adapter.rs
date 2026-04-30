@@ -88,7 +88,7 @@ impl Amm for BondingCurveAmm {
             self.quote_has_referral(),
         )?;
 
-        Ok(to_jupiter_quote(quote_params.amount, sdk_quote))
+        Ok(to_jupiter_quote(sdk_quote))
     }
 
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas> {
@@ -172,7 +172,7 @@ fn referral_token_account(swap_params: &SwapParams) -> Option<Pubkey> {
         .copied()
 }
 
-fn to_jupiter_quote(in_amount: u64, sdk_quote: crate::QuoteResult) -> Quote {
+fn to_jupiter_quote(sdk_quote: crate::QuoteResult) -> Quote {
     let creator_fee_bps = sdk_quote.fee_breakdown.creator_fee_bps;
     let protocol_fee_bps = sdk_quote.fee_breakdown.protocol_fee_bps;
 
@@ -180,7 +180,7 @@ fn to_jupiter_quote(in_amount: u64, sdk_quote: crate::QuoteResult) -> Quote {
     let fee_pct = Decimal::from(bps) / Decimal::from(crate::get_fee_denominator());
 
     Quote {
-        in_amount,
+        in_amount: sdk_quote.amount_in,
         out_amount: sdk_quote.amount_out,
         fee_amount: sdk_quote.fee_amount,
         fee_mint: sdk_quote.fee_mint,
@@ -488,7 +488,7 @@ mod tests {
         };
 
         // 50 bps + 50 bps = 100 bps = 0.0100
-        let quote = to_jupiter_quote(1_000_000, sdk_quote);
+        let quote = to_jupiter_quote(sdk_quote);
         assert_eq!(
             quote.fee_pct,
             rust_decimal::Decimal::from(100)
@@ -517,7 +517,7 @@ mod tests {
             market_cap: 1_000_000, // Not relevant here
         };
 
-        let quote = to_jupiter_quote(in_amount, sdk_quote);
+        let quote = to_jupiter_quote(sdk_quote);
 
         // Ensure it uses the BPS strictly instead of 1 / 1_000_000_000
         assert_eq!(
@@ -525,5 +525,27 @@ mod tests {
             rust_decimal::Decimal::from(200)
                 / rust_decimal::Decimal::from(crate::get_fee_denominator())
         );
+    }
+
+    #[test]
+    fn to_jupiter_quote_uses_capped_input_amount() {
+        let sdk_quote = crate::QuoteResult {
+            amount_in: 510_204,
+            amount_out: 24_999_375_015,
+            fee_amount: 10_204,
+            fee_mint: crate::WSOL_MINT,
+            fee_breakdown: crate::FeeBreakdown {
+                creator_fee: 5_102,
+                protocol_fee: 5_102,
+                referral_fee: 0,
+                total_fee: 10_204,
+                creator_fee_bps: 100,
+                protocol_fee_bps: 100,
+            },
+            market_cap: 20_000_000_000,
+        };
+
+        let quote = to_jupiter_quote(sdk_quote);
+        assert_eq!(quote.in_amount, 510_204);
     }
 }

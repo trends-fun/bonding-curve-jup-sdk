@@ -88,6 +88,7 @@ pub fn quote_quote_to_base(
     ensure_virtual_liquidity(snapshot)?;
 
     let market_cap = calculate_market_cap(snapshot)?;
+    let amount_in = cap_quote_to_base_amount(snapshot, amount_in, market_cap)?;
     let fee_breakdown = calculate_fees(market_cap, amount_in, has_referral)?;
     let actual_amount_in = checked_sub(amount_in, fee_breakdown.total_fee)?;
 
@@ -170,6 +171,26 @@ fn ensure_pool_is_tradeable(snapshot: &PoolSnapshot) -> Result<(), QuoteError> {
     }
 
     Ok(())
+}
+
+fn cap_quote_to_base_amount(
+    snapshot: &PoolSnapshot,
+    amount_in: u64,
+    market_cap: u64,
+) -> Result<u64, QuoteError> {
+    let remaining = checked_sub(crate::MIGRATION_QUOTE_THRESHOLD, snapshot.quote_reserve)?;
+    if remaining == 0 {
+        return Ok(0);
+    }
+
+    let (creator_fee_bps, protocol_fee_bps) = crate::get_fee_rates(market_cap);
+    let rate_sum = u64::from(creator_fee_bps) + u64::from(protocol_fee_bps);
+    let denominator = u64::from(crate::get_fee_denominator());
+
+    let max_amount_in = checked_mul_u128(u128::from(remaining), u128::from(denominator))?
+        / u128::from(checked_sub(denominator, rate_sum)?);
+
+    Ok(amount_in.min(try_u64(max_amount_in)?))
 }
 
 #[cfg(test)]
@@ -279,6 +300,19 @@ mod tests {
 
         let err = quote_base_to_quote(&snapshot, 1_000_000, false).unwrap_err();
         assert_eq!(err, QuoteError::PoolMigrated);
+    }
+
+    #[test]
+    fn caps_quote_to_base_input_near_migration_threshold() {
+        let mut snapshot = snapshot();
+        snapshot.quote_reserve = crate::MIGRATION_QUOTE_THRESHOLD - 500_000;
+
+        let partial = quote_quote_to_base(&snapshot, 1_000_000, false).unwrap();
+        let capped = quote_quote_to_base(&snapshot, 510_204, false).unwrap();
+
+        assert_eq!(partial, capped);
+        assert_eq!(partial.amount_in, 510_204);
+        assert_eq!(partial.fee_amount, 10_204);
     }
 
     #[test]

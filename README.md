@@ -145,7 +145,7 @@ let sdk_quote = quote_for_mints(
 let bps = sdk_quote.fee_breakdown.creator_fee_bps.saturating_add(sdk_quote.fee_breakdown.protocol_fee_bps);
 
 let jupiter_quote = jupiter_amm_interface::Quote {
-    in_amount: amount_in,
+    in_amount: sdk_quote.amount_in,
     out_amount: sdk_quote.amount_out,
     fee_amount: sdk_quote.fee_amount,
     fee_mint: sdk_quote.fee_mint,
@@ -161,6 +161,8 @@ The source of truth for the adapter lives in `src/jupiter_adapter.rs`.
 - completed curves are no longer tradeable on the bonding curve, even before migration runs
 - migrated curves keep historical reserves in the pool account, so quote code must check
   lifecycle state instead of inferring tradability from reserves alone
+- buy quotes that would cross the migration threshold are capped to the remaining curve capacity,
+  so `QuoteResult.amount_in` / Jupiter `Quote.in_amount` reflect the actual fillable input
 - `PoolSnapshot::is_completed()` uses `MIGRATION_QUOTE_THRESHOLD`
 - `PoolSnapshot::is_tradeable()` is what the adapter uses for `Amm::is_active()`
 

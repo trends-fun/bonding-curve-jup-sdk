@@ -26,3 +26,5 @@ All notable changes to this repository will be documented in this file.
 - Included fixture files in crate packaging and filled Cargo package metadata links
 - Pinned `jupiter-amm-interface` dependency to `=0.6.1` for integration consistency
 - Disabled quoting for completed or migrated curve pools and added a `devnet` feature for threshold parity
+- Capped quote-to-base buy quotes at the remaining migration capacity and surfaced the capped fill
+  through `QuoteResult.amount_in` / Jupiter `Quote.in_amount`
