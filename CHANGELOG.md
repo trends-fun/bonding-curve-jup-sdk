@@ -2,7 +2,17 @@
 
 All notable changes to this repository will be documented in this file.
 
-## Unreleased
+## 0.2.0
+
+### Breaking changes
+
+- `PoolSnapshot` now includes `is_migrated`
+- `QuoteError` now includes `MissingU8Byte`, `PoolCompleted`, and `PoolMigrated`
+
+### Migration
+
+- Update any downstream `PoolSnapshot { ... }` struct literals to include `is_migrated`
+- Update exhaustive matches on `QuoteError` to handle the new variants
 
 - Initial extraction of the Bonding Curve SDK for Jupiter AMM integration
 - Pool snapshot parsing, fee logic, quote math, and swap account metas
@@ -15,3 +25,4 @@ All notable changes to this repository will be documented in this file.
 - Fixed strict `clippy -D warnings` compatibility in fee-tier tests
 - Included fixture files in crate packaging and filled Cargo package metadata links
 - Pinned `jupiter-amm-interface` dependency to `=0.6.1` for integration consistency
+- Disabled quoting for completed or migrated curve pools and added a `devnet` feature for threshold parity

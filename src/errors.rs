@@ -26,4 +26,10 @@ pub enum QuoteError {
     MathUnderflow,
     #[error("Bonding curve integer conversion overflow")]
     IntegerConversionOverflow,
+    #[error("Missing u8 byte at offset {0}")]
+    MissingU8Byte(usize),
+    #[error("Pool has completed and can no longer trade on the curve")]
+    PoolCompleted,
+    #[error("Pool has migrated and can no longer trade on the curve")]
+    PoolMigrated,
 }

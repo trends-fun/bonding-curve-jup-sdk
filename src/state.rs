@@ -3,6 +3,10 @@ use solana_pubkey::{pubkey, Pubkey};
 use crate::QuoteError;
 
 pub const BONDING_CURVE_POOL_DISCRIMINATOR: [u8; 8] = [241, 154, 109, 4, 17, 177, 109, 188];
+#[cfg(feature = "devnet")]
+pub const MIGRATION_QUOTE_THRESHOLD: u64 = 10_000_000_000;
+#[cfg(not(feature = "devnet"))]
+pub const MIGRATION_QUOTE_THRESHOLD: u64 = 85_000_000_000;
 pub const WSOL_MINT: Pubkey = pubkey!("So11111111111111111111111111111111111111112");
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -14,13 +18,15 @@ pub struct PoolSnapshot {
     pub quote_reserve: u64,
     pub virtual_base_reserve: u64,
     pub virtual_quote_reserve: u64,
+    pub is_migrated: u8,
 }
 
 impl PoolSnapshot {
     pub fn try_from_account_data(data: &[u8]) -> Result<Self, QuoteError> {
         const PUBKEY_LEN: usize = 32;
         const U64_LEN: usize = 8;
-        const ACCOUNT_LEN: usize = 8 + PUBKEY_LEN * 4 + U64_LEN * 6 + U64_LEN * 16;
+        const U8_LEN: usize = 1;
+        const ACCOUNT_LEN: usize = 8 + PUBKEY_LEN * 4 + U64_LEN * 6 + U8_LEN + 7 + U64_LEN * 15;
 
         if data.len() < ACCOUNT_LEN {
             return Err(QuoteError::PoolAccountTooSmall);
@@ -38,7 +44,19 @@ impl PoolSnapshot {
             quote_reserve: read_u64(body, 136)?,
             virtual_base_reserve: read_u64(body, 144)?,
             virtual_quote_reserve: read_u64(body, 152)?,
+            is_migrated: read_u8(body, 176)?,
         })
+    }
+
+    pub fn is_completed(&self) -> bool {
+        self.quote_reserve >= MIGRATION_QUOTE_THRESHOLD
+    }
+
+    pub fn is_tradeable(&self) -> bool {
+        self.is_migrated == 0
+            && !self.is_completed()
+            && self.virtual_base_reserve > 0
+            && self.virtual_quote_reserve > 0
     }
 }
 
@@ -60,6 +78,12 @@ fn read_u64(data: &[u8], offset: usize) -> Result<u64, QuoteError> {
         .try_into()
         .map_err(|_| QuoteError::IntegerConversionOverflow)?;
     Ok(u64::from_le_bytes(array))
+}
+
+fn read_u8(data: &[u8], offset: usize) -> Result<u8, QuoteError> {
+    data.get(offset)
+        .copied()
+        .ok_or(QuoteError::MissingU8Byte(offset))
 }
 
 #[cfg(test)]
@@ -93,7 +117,9 @@ mod tests {
         data.extend_from_slice(&999u64.to_le_bytes());
         data.extend_from_slice(&1u64.to_le_bytes());
         data.extend_from_slice(&2u64.to_le_bytes());
-        data.extend_from_slice(&[0u8; 16 * 8]);
+        data.push(0);
+        data.extend_from_slice(&[0u8; 7]);
+        data.extend_from_slice(&[0u8; 15 * 8]);
 
         let snapshot = PoolSnapshot::try_from_account_data(&data).unwrap();
         assert_eq!(snapshot.base_mint, base_mint);
@@ -103,6 +129,7 @@ mod tests {
         assert_eq!(snapshot.quote_reserve, 456);
         assert_eq!(snapshot.virtual_base_reserve, 789);
         assert_eq!(snapshot.virtual_quote_reserve, 999);
+        assert_eq!(snapshot.is_migrated, 0);
     }
 
     #[test]
@@ -140,5 +167,23 @@ mod tests {
         assert_eq!(snapshot.quote_reserve, 0);
         assert_eq!(snapshot.virtual_base_reserve, 1_000_000_000_000_000);
         assert_eq!(snapshot.virtual_quote_reserve, 20_000_000_000);
+        assert_eq!(snapshot.is_migrated, 0);
+    }
+
+    #[test]
+    fn detects_completed_pool_from_quote_reserve() {
+        let snapshot = PoolSnapshot {
+            base_mint: Pubkey::new_unique(),
+            base_vault: Pubkey::new_unique(),
+            quote_vault: Pubkey::new_unique(),
+            base_reserve: 1_000_000_000_000_000,
+            quote_reserve: MIGRATION_QUOTE_THRESHOLD,
+            virtual_base_reserve: 1_000_000_000_000_000,
+            virtual_quote_reserve: 20_000_000_000,
+            is_migrated: 0,
+        };
+
+        assert!(snapshot.is_completed());
+        assert!(!snapshot.is_tradeable());
     }
 }

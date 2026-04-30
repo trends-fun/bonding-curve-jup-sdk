@@ -140,7 +140,7 @@ impl Amm for BondingCurveAmm {
     }
 
     fn is_active(&self) -> bool {
-        self.state.virtual_base_reserve > 0 && self.state.virtual_quote_reserve > 0
+        self.state.is_tradeable()
     }
 }
 
@@ -202,9 +202,10 @@ mod tests {
             base_vault: Pubkey::new_unique(),
             quote_vault: Pubkey::new_unique(),
             base_reserve: 1_000_000_000_000_000,
-            quote_reserve: 10_000_000_000,
+            quote_reserve: 5_000_000_000,
             virtual_base_reserve: 1_000_000_000_000_000,
             virtual_quote_reserve: 20_000_000_000,
+            is_migrated: 0,
         }
     }
 
@@ -444,6 +445,28 @@ mod tests {
         assert!(err
             .to_string()
             .contains("Unexpected owner for bonding curve pool"));
+    }
+
+    #[test]
+    fn adapter_marks_completed_pool_inactive() {
+        let mut amm = BondingCurveAmm {
+            key: Pubkey::new_unique(),
+            state: sample_snapshot(),
+        };
+        amm.state.quote_reserve = crate::MIGRATION_QUOTE_THRESHOLD;
+
+        assert!(!amm.is_active());
+    }
+
+    #[test]
+    fn adapter_marks_migrated_pool_inactive() {
+        let mut amm = BondingCurveAmm {
+            key: Pubkey::new_unique(),
+            state: sample_snapshot(),
+        };
+        amm.state.is_migrated = 1;
+
+        assert!(!amm.is_active());
     }
 
     #[test]

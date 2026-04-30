@@ -2,12 +2,22 @@
 
 Pure Rust quoting SDK for the Bonding Curve venue, prepared for Jupiter AMM integration.
 
+## Upgrade Note
+
+`0.2.0` is a breaking SDK release.
+
+- `PoolSnapshot` now includes `is_migrated`
+- `QuoteError` now includes `MissingU8Byte`, `PoolCompleted`, and `PoolMigrated`
+- downstream `PoolSnapshot { ... }` struct literals and exhaustive `match` expressions on
+  `QuoteError` must be updated
+
 ## Status
 
 This repository contains the SDK portion of the integration:
 
 - deterministic pool parsing from account data
 - exact-in quote math for both directions
+- completed and migrated pool detection, so inactive curves stop quoting
 - exact-in enforcement in both quote and swap-meta paths
 - on-chain fee semantics, including referral-aware fee splitting
 - venue metadata and PDA helpers
@@ -27,6 +37,7 @@ This repository does not yet contain a fully wired Jupiter integration:
 - no network calls
 - no RPC dependency
 - deterministic quote behavior from account snapshot input only
+- lifecycle parity with on-chain curve shutdown after completion or migration
 - thin adapter layer in `jupiter-core`
 - standalone-repo friendly packaging
 
@@ -35,6 +46,7 @@ This repository does not yet contain a fully wired Jupiter integration:
 - `PoolSnapshot` parsing from raw pool account data
 - quote direction detection from input and output mints
 - quote math for quote-to-base and base-to-quote swaps
+- completed and migrated pool detection
 - fee and market-cap calculations
 - bonding curve program metadata and PDA helpers
 - swap account meta construction
@@ -43,6 +55,8 @@ Main exports:
 
 - `PoolSnapshot`
 - `PoolSnapshot::try_from_account_data`
+- `PoolSnapshot::is_completed`
+- `PoolSnapshot::is_tradeable`
 - `TradeDirection`
 - `QuoteRequest`
 - `QuoteResult`
@@ -52,6 +66,7 @@ Main exports:
 - `supports_mints`
 - `calculate_market_cap`
 - `calculate_fees`
+- `MIGRATION_QUOTE_THRESHOLD`
 - `BONDING_CURVE_PROGRAM_ID`
 - `BONDING_CURVE_LABEL`
 - `pool_authority`
@@ -83,6 +98,7 @@ Current adapter assumptions:
 - this crate currently pins `jupiter-amm-interface` to `=0.6.1`
 - `Swap::MeteoraDynamicBondingCurveSwapWithRemainingAccounts` exists in the target execution path
 - the target repo wants a deterministic no-referral quote policy until quote-time referrer context is available
+- mainnet builds use the mainnet migration threshold unless the `devnet` feature is enabled
 
 ## Jupiter Adapter Feature
 
@@ -90,6 +106,13 @@ Enable the adapter with:
 
 ```bash
 cargo test --features jupiter-adapter
+```
+
+Use the `devnet` feature when quoting devnet pools so completion detection matches
+the on-chain threshold:
+
+```bash
+cargo test --features "devnet jupiter-adapter"
 ```
 
 The feature exports `bonding_curve_sdk::BondingCurveAmm` and compile-checks the adapter
@@ -103,6 +126,7 @@ Current test coverage includes a real mainnet pool fixture for:
 - adapter `update()` state refresh behavior
 - adapter `ExactOut` rejection on swap-meta construction
 - adapter `update()` rejection for unexpected account owner
+- completed and migrated pool deactivation in the adapter
 
 ## Minimal Adapter Flow
 
@@ -131,6 +155,14 @@ let jupiter_quote = jupiter_amm_interface::Quote {
 ```
 
 The source of truth for the adapter lives in `src/jupiter_adapter.rs`.
+
+## Pool Lifecycle
+
+- completed curves are no longer tradeable on the bonding curve, even before migration runs
+- migrated curves keep historical reserves in the pool account, so quote code must check
+  lifecycle state instead of inferring tradability from reserves alone
+- `PoolSnapshot::is_completed()` uses `MIGRATION_QUOTE_THRESHOLD`
+- `PoolSnapshot::is_tradeable()` is what the adapter uses for `Amm::is_active()`
 
 ## Referral Behavior
 
