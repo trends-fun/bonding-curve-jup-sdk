@@ -117,7 +117,7 @@ mod tests {
         data.extend_from_slice(&999u64.to_le_bytes());
         data.extend_from_slice(&1u64.to_le_bytes());
         data.extend_from_slice(&2u64.to_le_bytes());
-        data.push(0);
+        data.push(1);
         data.extend_from_slice(&[0u8; 7]);
         data.extend_from_slice(&[0u8; 15 * 8]);
 
@@ -129,7 +129,7 @@ mod tests {
         assert_eq!(snapshot.quote_reserve, 456);
         assert_eq!(snapshot.virtual_base_reserve, 789);
         assert_eq!(snapshot.virtual_quote_reserve, 999);
-        assert_eq!(snapshot.is_migrated, 0);
+        assert_eq!(snapshot.is_migrated, 1);
     }
 
     #[test]
