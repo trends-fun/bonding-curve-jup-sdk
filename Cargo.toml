@@ -1,6 +1,6 @@
 [package]
 name = "bonding-curve-jup-sdk"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Pure Rust Bonding Curve quoting SDK for Jupiter AMM integration"
 license = "MIT"
@@ -20,6 +20,7 @@ include = [
 
 [features]
 default = []
+devnet = []
 jupiter-adapter = ["dep:anyhow", "dep:jupiter-amm-interface", "dep:rust_decimal"]
 
 [dependencies]

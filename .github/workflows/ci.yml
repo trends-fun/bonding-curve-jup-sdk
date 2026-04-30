@@ -22,3 +22,15 @@ jobs:
 
       - name: Run adapter feature tests
         run: cargo test --locked --features jupiter-adapter
+
+      - name: Run devnet tests
+        run: cargo test --locked --features devnet
+
+      - name: Run devnet adapter feature tests
+        run: cargo test --locked --features "devnet jupiter-adapter"
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Verify package
+        run: cargo package --allow-dirty

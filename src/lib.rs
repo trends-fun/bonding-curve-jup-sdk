@@ -34,4 +34,6 @@ pub use quote::{
     quote, quote_base_to_quote, quote_for_mints, quote_quote_to_base, supports_mints,
     trade_direction_from_mints, QuoteRequest, QuoteResult, TradeDirection,
 };
-pub use state::{PoolSnapshot, BONDING_CURVE_POOL_DISCRIMINATOR, WSOL_MINT};
+pub use state::{
+    PoolSnapshot, BONDING_CURVE_POOL_DISCRIMINATOR, MIGRATION_QUOTE_THRESHOLD, WSOL_MINT,
+};

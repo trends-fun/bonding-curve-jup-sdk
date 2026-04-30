@@ -73,6 +73,9 @@ cargo package --allow-dirty
 
 Include these points in the handoff message:
 
+- this is a breaking SDK update released as `0.2.0`
+- `PoolSnapshot` now includes `is_migrated`, so downstream struct literals must be updated
+- `QuoteError` now includes `MissingU8Byte`, `PoolCompleted`, and `PoolMigrated`, so exhaustive matches must be updated
 - the crate is deterministic and does not perform network calls
 - it owns pool parsing, quote math, fee logic, venue metadata, and ABI-order account metas
 - it does not own loader registration or execution routing
